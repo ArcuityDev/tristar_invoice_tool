@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ArcuityVizion Usage Calculator (Timeframe/Insurer)</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; }
+        .container { max-width: 1500px; margin: 0 auto; background: #fff; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); padding: 30px; }
+        h1 { color: #2c3e50; border-bottom: 3px solid #667eea; padding-bottom: 10px; margin-bottom: 30px; }
+        .title-with-logo { display: flex; align-items: center; gap: 12px; }
+        .title-with-logo img.logo { height: 120px; width: auto; }
+        .controls-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 16px; }
+        .controls-row label { font-size: 14px; color: #34495e; }
+        .controls-row select, .controls-row input[type="file"], .controls-row input[type="url"] { padding: 6px 8px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px; }
+        .status { font-size: 12px; color: #666; }
+        h2 { color: #34495e; margin-top: 30px; margin-bottom: 15px; padding: 10px; background: linear-gradient(90deg, #f3f4f6 0%, transparent 100%); border-left: 4px solid #667eea; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .services-table col.service { width: 20%; }
+        .services-table col.reports { width: 8%; }
+        .services-table col.pages { width: 10%; }
+        .services-table col.per-sub { width: 8%; }
+        .services-table col.units { width: 8%; }
+        .services-table col.sub-cost { width: 10%; }
+        .services-table col.report-fees { width: 10%; }
+        .services-table col.page-fees { width: 9%; }
+        .services-table col.shipping { width: 9%; }
+        .services-table col.sales-tax { width: 10%; }
+        .services-table col.total { width: 10%; }
+        th { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #fff; padding: 12px; text-align: left; font-weight: 600; }
+        td { padding: 10px 12px; border-bottom: 1px solid #e0e0e0; }
+        td.calculated { text-align: right; }
+        tr:hover { background: #f8f9fa; }
+        input[type="number"] { width: 100%; padding: 8px; border: 2px solid #e0e0e0; border-radius: 4px; font-size: 14px; text-align: right; }
+        input[type="number"]:focus { outline: none; border-color: #667eea; box-shadow: 0 0 0 3px rgba(102,126,234,0.1); }
+        .total-row { background: linear-gradient(90deg, #e8f5e9 0%, #f1f8e9 100%); font-weight: bold; font-size: 1.1em; }
+        .grand-total { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #fff; font-size: 1.2em; font-weight: bold; }
+        .notes { background: #f8f9fa; border-left: 4px solid #667eea; padding: 15px; margin-top: 20px; border-radius: 4px; }
+        .chipset { display: flex; flex-wrap: wrap; gap: 6px; }
+        .chipset label { display: inline-flex; align-items: center; gap: 4px; border: 1px solid #ddd; border-radius: 16px; padding: 4px 10px; background: #fafafa; cursor: pointer; }
+        .chipset input { accent-color: #667eea; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1 class="title-with-logo">
+        <img id="appLogo" src="logo.png" class="logo" alt="ArcuityVizion Logo" />
+        <span>ArcuityVizion Usage Calculator</span>
+    </h1>
+
+    <div class="controls-row">
+        <label>Timeframe</label>
+        <select id="timeframe">
+            <option value="one">One Month</option>
+            <option value="custom">Custom Months</option>
+            <option value="last3">Last 3 Months</option>
+            <option value="last12">Last 12 Months</option>
+            <option value="ytd">Year To Date</option>
+            <option value="lastYear">Last Year</option>
+        </select>
+
+        <label>Month</label>
+        <select id="monthSelect" disabled><option>Loading...</option></select>
+
+        <label id="rangeLabel" style="display:none;">Range</label>
+        <div id="rangeWrap" style="display:none; gap:6px; align-items:center;">
+            <select id="monthFrom"></select>
+            <span>to</span>
+            <select id="monthTo"></select>
+        </div>
+
+        <label>Insurer</label>
+        <select id="insurerSelect"><option>Loading...</option></select>
+
+        <span class="status" id="csvStatus"></span>
+        <input type="file" id="csvFileInput" accept=".csv" />
+        <input type="url" id="csvUrlInput" placeholder="https://.../shirlei_report_all_data.csv" style="min-width:320px;" />
+        <button id="loadCsvBtn" type="button">Load CSV URL</button>
+    </div>
+
+    <h2>Complex Report Generation Services</h2>
+    <table class="services-table">
+        <colgroup>
+            <col class="service" /><col class="reports" /><col class="pages" /><col class="per-sub" />
+            <col class="units" /><col class="sub-cost" /><col class="report-fees" /><col class="page-fees" />
+            <col class="shipping" /><col class="sales-tax" /><col class="total" />
+        </colgroup>
+        <tr>
+            <th>Service</th><th>Reports/Month</th><th>Pages/Month</th><th>Reports per Subscription</th>
+            <th>Subscription Units</th><th>Subscription Cost</th><th>Report Fees ($25 ea)</th><th>Page Fees ($0.10 ea)</th>
+            <th>Shipping</th><th>Sales Tax</th><th>Total Cost</th>
+        </tr>
+        <tr>
+            <td>IMR Report Generation</td>
+            <td><input type="number" id="imr-usage" min="0" value="0" onchange="calculateAll()" /></td>
+            <td><input type="number" id="imr-pages" min="0" value="0" onchange="calculateAll()" /></td>
+            <td>400</td>
+            <td class="calculated" id="imr-units">0</td>
+            <td class="calculated" id="imr-subscription">$0.00</td>
+            <td class="calculated" id="imr-report-fees">$0.00</td>
+            <td class="calculated" id="imr-page-fees">$0.00</td>
+            <td class="calculated" id="imr-ship">$0.00</td>
+            <td class="calculated" id="imr-tax">$0.00</td>
+            <td class="calculated" id="imr-total">$0.00</td>
+        </tr>
+        <tr>
+            <td>QME Report Prep</td>
+            <td><input type="number" id="qme-usage" min="0" value="0" onchange="calculateAll()" /></td>
+            <td><input type="number" id="qme-pages" min="0" value="0" onchange="calculateAll()" /></td>
+            <td>200</td>
+            <td class="calculated" id="qme-units">0</td>
+            <td class="calculated" id="qme-subscription">$0.00</td>
+            <td class="calculated" id="qme-report-fees">$0.00</td>
+            <td class="calculated" id="qme-page-fees">$0.00</td>
+            <td class="calculated" id="qme-ship">$0.00</td>
+            <td class="calculated" id="qme-tax">$0.00</td>
+            <td class="calculated" id="qme-total">$0.00</td>
+        </tr>
+        <tr>
+            <td>SDT Response</td>
+            <td><input type="number" id="sdt-usage" min="0" value="0" onchange="calculateAll()" /></td>
+            <td><input type="number" id="sdt-pages" min="0" value="0" onchange="calculateAll()" /></td>
+            <td>400</td>
+            <td class="calculated" id="sdt-units">0</td>
+            <td class="calculated" id="sdt-subscription">$0.00</td>
+            <td class="calculated" id="sdt-report-fees">$0.00</td>
+            <td class="calculated" id="sdt-page-fees">$0.00</td>
+            <td class="calculated" id="sdt-ship">$0.00</td>
+            <td class="calculated" id="sdt-tax">$0.00</td>
+            <td class="calculated" id="sdt-total">$0.00</td>
+        </tr>
+        <tr>
+            <td>File and Serve</td>
+            <td><input type="number" id="file-usage" min="0" value="0" onchange="calculateAll()" /></td>
+            <td><input type="number" id="file-pages" min="0" value="0" onchange="calculateAll()" /></td>
+            <td>800</td>
+            <td class="calculated" id="file-units">0</td>
+            <td class="calculated" id="file-subscription">$0.00</td>
+            <td class="calculated" id="file-report-fees">$0.00</td>
+            <td class="calculated" id="file-page-fees">$0.00</td>
+            <td class="calculated" id="file-ship">$0.00</td>
+            <td class="calculated" id="file-tax">$0.00</td>
+            <td class="calculated" id="file-total">$0.00</td>
+        </tr>
+        <tr>
+            <td>New File Prep</td>
+            <td><input type="number" id="nfp-usage" min="0" value="0" onchange="calculateAll()" /></td>
+            <td><input type="number" id="nfp-pages" min="0" value="0" onchange="calculateAll()" /></td>
+            <td>-</td>
+            <td class="calculated" id="nfp-units">-</td>
+            <td class="calculated" id="nfp-subscription">$0.00</td>
+            <td class="calculated" id="nfp-report-fees">$0.00</td>
+            <td class="calculated" id="nfp-page-fees">$0.00</td>
+            <td class="calculated" id="nfp-ship">$0.00</td>
+            <td class="calculated" id="nfp-tax">$0.00</td>
+            <td class="calculated" id="nfp-total">$0.00</td>
+        </tr>
+        <tr>
+            <td>On-Demand</td>
+            <td><input type="number" id="ond-usage" min="0" value="0" onchange="calculateAll()" /></td>
+            <td><input type="number" id="ond-pages" min="0" value="0" onchange="calculateAll()" /></td>
+            <td>-</td>
+            <td class="calculated" id="ond-units">-</td>
+            <td class="calculated" id="ond-subscription">$0.00</td>
+            <td class="calculated" id="ond-report-fees">$0.00</td>
+            <td class="calculated" id="ond-page-fees">$0.00</td>
+            <td class="calculated" id="ond-ship">$0.00</td>
+            <td class="calculated" id="ond-tax">$0.00</td>
+            <td class="calculated" id="ond-total">$0.00</td>
+        </tr>
+        <tr class="total-row">
+            <td colspan="10">Report Generation Subtotal</td>
+            <td class="calculated" id="report-subtotal">$0.00</td>
+        </tr>
+    </table>
+
+    <h2>Record Retrieval Services</h2>
+    <table class="services-table">
+        <colgroup>
+            <col class="service" /><col class="reports" /><col class="pages" /><col class="per-sub" />
+            <col class="units" /><col class="sub-cost" /><col class="report-fees" /><col class="page-fees" />
+            <col class="shipping" /><col class="sales-tax" /><col class="total" />
+        </colgroup>
+        <tr>
+            <th>Service</th><th>Reports/Month</th><th>Pages/Month</th><th>Reports per Subscription</th>
+            <th>Subscription Units</th><th>Subscription Cost</th><th>Report Fees</th><th>Page Fees</th>
+            <th>Shipping</th><th>Sales Tax</th><th>Total Cost</th>
+        </tr>
+        <tr>
+            <td>Record Retrieval Orders</td>
+            <td>
+                <label for="retrieval-usage" style="display:block;font-size:12px;color:#555;">Orders</label>
+                <input type="number" id="retrieval-usage" min="0" value="0" onchange="calculateAll()" />
+            </td>
+            <td>
+                <label for="retrieval-pages" style="display:block;font-size:12px;color:#555;">Total Pages</label>
+                <input type="number" id="retrieval-pages" min="0" value="0" onchange="calculateAll()" />
+            </td>
+            <td>
+                <label for="retrieval-per-sub-min" style="display:block;font-size:12px;color:#555;">Min</label>
+                <input type="number" id="retrieval-per-sub-min" min="1" value="300" onchange="calculateAll()" style="width:6ch;" />
+                <label for="retrieval-per-sub-max" style="display:block;margin-top:6px;font-size:12px;color:#555;">Max</label>
+                <input type="number" id="retrieval-per-sub-max" min="1" value="600" onchange="calculateAll()" style="width:6ch;" />
+            </td>
+            <td class="calculated" id="retrieval-units">-</td>
+            <td class="calculated" id="retrieval-subscription">$0.00</td>
+            <td class="calculated" id="retrieval-report-fees">$0.00</td>
+            <td class="calculated" id="retrieval-page-fees">$0.00</td>
+            <td class="calculated" id="retrieval-ship">$0.00</td>
+            <td class="calculated" id="retrieval-tax">$0.00</td>
+            <td class="calculated" id="retrieval-total">$0.00</td>
+        </tr>
+        <tr class="total-row">
+            <td colspan="10">Record Retrieval Subtotal</td>
+            <td class="calculated" id="retrieval-subtotal">$0.00</td>
+        </tr>
+    </table>
+
+    <h2>Monthly Summary</h2>
+    <table>
+        <tr><th>Category</th><th>Cost</th></tr>
+        <tr><td>Report Generation Services</td><td class="calculated" id="summary-reports">$0.00</td></tr>
+        <tr><td>Record Retrieval Services</td><td class="calculated" id="summary-retrieval">$0.00</td></tr>
+        <tr class="grand-total"><td>TOTAL MONTHLY COST</td><td class="calculated" id="grand-total">$0.00</td></tr>
+    </table>
+
+    <div class="notes">
+        <h3>📝 Pricing Structure Explained:</h3>
+        <ul>
+            <li><strong>Proportional Subscription Pricing:</strong> You pay for exactly what you use:
+                <ul>
+                    <li>IMR: $5,000 per 400 reports (proportional billing)</li>
+                    <li>QME: $5,000 per 200 reports (proportional billing)</li>
+                    <li>SDT: $5,000 per 400 reports (proportional billing)</li>
+                    <li>File &amp; Serve: $5,000 per 800 reports (proportional billing)</li>
+                    <li>Each Report: $2,500 per 100 reports (includes $25/report fee)</li>
+                </ul>
+            </li>
+            <li><strong>How Proportional Billing Works:</strong>
+                <ul>
+                    <li>450 IMR reports = 1.125 units (1 full + 50/400 partial) = $5,625</li>
+                    <li>No need to buy full blocks - pay only for what you use!</li>
+                </ul>
+            </li>
+            <li><strong>Additional Fees (IMR, QME, SDT, File &amp; Serve ONLY):</strong>
+                <ul>
+                    <li>$25.00 per report (applies to ALL reports)</li>
+                    <li>$0.10 per page (applies to ALL pages)</li>
+                </ul>
+            </li>
+            <li><strong>"Each Report" Service:</strong> The $25 per report fee is already included in the $2,500 subscription</li>
+            <li><strong>Record Retrieval Pricing Tiers:</strong>
+                <ul>
+                    <li>1-299 orders = $112.50/order</li>
+                    <li>300-600 orders = Included in $33,750 subscription</li>
+                    <li>601-1000 orders = $105/order (for orders above 600)</li>
+                    <li>1000+ orders = Negotiated rate</li>
+                </ul>
+            </li>
+            <li><strong>Documents over 500 pages</strong> charged at $0.05 per additional page</li>
+        </ul>
+    </div>
+</div>
+
+<script>
+// Config
+const params = new URLSearchParams(window.location.search);
+let CSV_URL = params.get('csvUrl') || localStorage.getItem('csvUrl') || 'shirlei_report_all_data.csv';
+const LOGO_URL = params.get('logoUrl') || 'logo.png';
+
+// DOM
+const monthSelect = document.getElementById('monthSelect');
+const timeframe = document.getElementById('timeframe');
+const insurerSelect = document.getElementById('insurerSelect');
+const rangeLabel = document.getElementById('rangeLabel');
+const rangeWrap = document.getElementById('rangeWrap');
+const monthFrom = document.getElementById('monthFrom');
+const monthTo = document.getElementById('monthTo');
+const csvStatus = document.getElementById('csvStatus');
+const csvFileInput = document.getElementById('csvFileInput');
+const csvUrlInput = document.getElementById('csvUrlInput');
+const loadCsvBtn = document.getElementById('loadCsvBtn');
+
+// Data
+let csvData = null; // { header:[], rows:[] }
+let rowsNorm = [];  // normalized rows for flexible filtering
+let allMonths = []; // ['YYYY-MM']
+let allInsurers = []; // ['All', 'X', ...]
+
+const MONTH_NAMES = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const fmtCurrency = (n) => '$' + (Number(n)||0).toLocaleString('en-US', { minimumFractionDigits:2, maximumFractionDigits:2 });
+
+function monthLabel(key){ const [y,m]=key.split('-'); return `${MONTH_NAMES[parseInt(m,10)-1]} ${y}`; }
+function yyyymm(dateStr){ if(!dateStr) return null; const p=dateStr.split('/'); if(p.length!==3) return null; const m=String(parseInt(p[0],10)).padStart(2,'0'); const y=p[2]; return `${y}-${m}`; }
+
+function parseCSV(text){
+  const rows=[]; let i=0, field='', row=[], inQ=false;
+  while(i<text.length){ const c=text[i];
+    if(inQ){ if(c==='"'){ if(text[i+1]==='"'){ field+='"'; i+=2; continue;} inQ=false; i++; continue;} field+=c; i++; continue; }
+    if(c==='"'){ inQ=true; i++; continue; }
+    if(c===','){ row.push(field); field=''; i++; continue; }
+    if(c==='\n'){ row.push(field); rows.push(row); row=[]; field=''; i++; continue; }
+    if(c==='\r'){ i++; continue; }
+    field+=c; i++; }
+  if(field.length>0||row.length>0){ row.push(field); rows.push(row); }
+  return rows; }
+
+function ensureAgg(){ const z=()=>({reports:0,pages:0,ship:0,tax:0}); return { imr:z(), qme:z(), sdt:z(), file:z(), nfp:z(), ond:z(), retrieval:{orders:0,pages:0,extraPages:0,ship:0,tax:0,roi:0} } }
+
+function mapRequestType(rt){ if(!rt) return null; const s=String(rt).toLowerCase();
+  if(s==='arcuity imr') return 'imr';
+  if(s==='arcuity sdt response') return 'sdt';
+  if(s==='arcuity file and serve') return 'file';
+  if(s==='arcuity on-demand' || s==='arcuity on demand') return 'ond';
+  if(s.includes('qme')) return 'qme';
+  if(s.includes('file prep')) return 'nfp';
+  return null; }
+
+function toMoney(v){ if(v==null) return 0; const n=parseFloat(String(v).replace(/[$,\s]/g,'')); return isNaN(n)?0:n; }
+function toInt(v){ const n=parseInt(String(v||'').replace(/[^0-9-]/g,''),10); return isNaN(n)?0:n; }
+
+function normalizeRows(){
+  const h=csvData.header; const rows=csvData.rows; const getIdx = (names)=> h.findIndex(x=>names.some(n=> String(x).toLowerCase().replace(/\s|_/g,'')===String(n).toLowerCase().replace(/\s|_/g,'')));
+  const iDate=getIdx(['date_received','datereceived','date']);
+  const iRT=getIdx(['RequestType','requesttype']);
+  const iPre=getIdx(['PredupePageCount','predupepagecount']);
+  const iPost=getIdx(['PostDupePageCount','postdupepagecount']);
+  const iShip=getIdx(['Shipping','ship']);
+  const iTax=getIdx(['SalesTax','salestax','sales_tax']);
+  const iROI=getIdx(['ROIFees','ROI Fees','roi_fees','roi']);
+  const iIns=getIdx(['Insurer','insurer']);
+  rowsNorm = [];
+  const monthsSet = new Set(); const insurersSet = new Set();
+  for(const r of rows){ const m=yyyymm(r[iDate]); if(!m) continue; monthsSet.add(m);
+    const svc = mapRequestType(r[iRT]); const pre=toInt(r[iPre]); const post=toInt(r[iPost]); const pages= post || pre || 0;
+    const ship= iShip!==-1? toMoney(r[iShip]):0; const tax=iTax!==-1?toMoney(r[iTax]):0; const roi=iROI!==-1?toMoney(r[iROI]):0; const insurer=iIns!==-1? (r[iIns]||'').toString().trim() : '';
+    if(insurer) insurersSet.add(insurer);
+    const isRetrieval = (r[iRT]||'').toString().toLowerCase().includes('record retrieval');
+    rowsNorm.push({ m, svc, pages, ship, tax, roi, insurer, pre, isRetrieval });
+  }
+  allMonths = Array.from(monthsSet).sort();
+  allInsurers = ['All', ...Array.from(insurersSet).sort()];
+}
+
+function buildControls(){
+  // month dropdown (single)
+  monthSelect.innerHTML=''; allMonths.forEach(k=>{ const o=document.createElement('option'); o.value=k; o.textContent=monthLabel(k); monthSelect.appendChild(o); });
+  monthSelect.disabled = false;
+  // range selects
+  const fillRange = (sel)=>{ sel.innerHTML=''; allMonths.forEach(k=>{ const o=document.createElement('option'); o.value=k; o.textContent=monthLabel(k); sel.appendChild(o); }); };
+  fillRange(monthFrom); fillRange(monthTo);
+  // insurers
+  insurerSelect.innerHTML=''; allInsurers.forEach(v=>{ const o=document.createElement('option'); o.value=v; o.textContent=v; insurerSelect.appendChild(o); });
+}
+
+function selectedMonths(){
+  const mode = timeframe.value;
+  const latest = allMonths[allMonths.length-1];
+  if(mode==='one'){ return [monthSelect.value || latest].filter(Boolean); }
+  if(mode==='custom'){
+    const from = monthFrom.value || latest;
+    const to = monthTo.value || latest;
+    // ensure from<=to
+    const idx = (k)=> allMonths.indexOf(k);
+    let i = Math.min(idx(from), idx(to));
+    let j = Math.max(idx(from), idx(to));
+    const sel = [];
+    for(let p=i; p<=j; p++){ if(p>=0) sel.push(allMonths[p]); }
+    return sel.length? sel : [latest];
+  }
+  // ranges based on latest
+  const [ly,lm] = (latest||'').split('-').map(x=>parseInt(x,10));
+  const toIntKey = (y,m)=> `${y}-${String(m).padStart(2,'0')}`;
+  const months=[];
+  if(mode==='last3' || mode==='last12'){
+    const span = mode==='last3'? 3:12; let y=ly, m=lm; for(let i=0;i<span;i++){ months.unshift(toIntKey(y,m)); m--; if(m===0){ m=12; y--; } }
+    return months.filter(k=> allMonths.includes(k));
+  }
+  if(mode==='ytd'){
+    const keys = allMonths.filter(k=> k.startsWith(String(ly)+'-')); return keys;
+  }
+  if(mode==='lastYear'){
+    const py = ly-1; return allMonths.filter(k=> k.startsWith(String(py)+'-'));
+  }
+  return [latest];
+}
+
+function aggregateView(){
+  const selMonths = selectedMonths();
+  const selIns = insurerSelect.value || 'All';
+  const bucket = ensureAgg();
+  for(const r of rowsNorm){
+    if(selIns!=='All' && r.insurer!==selIns) continue;
+    if(!selMonths.includes(r.m)) continue;
+    if(r.svc){ bucket[r.svc].reports += 1; bucket[r.svc].pages += r.pages; bucket[r.svc].ship += r.ship; bucket[r.svc].tax += r.tax; }
+    if(r.isRetrieval){
+      bucket.retrieval.orders += 1; bucket.retrieval.pages += r.pages; bucket.retrieval.ship += r.ship; bucket.retrieval.tax += r.tax; bucket.retrieval.roi += r.roi; if(r.pre>500){ bucket.retrieval.extraPages += (r.pre-500); }
+    }
+  }
+  return bucket;
+}
+
+function applyBucket(bucket){
+  const setNum = (id, val) => { const el=document.getElementById(id); if(!el) return; if(/-ship$/.test(id)||/-tax$/.test(id)){ el.textContent = fmtCurrency(val||0); } else { el.value = String(val||0); } };
+  setNum('imr-usage', bucket.imr.reports); setNum('imr-pages', bucket.imr.pages); setNum('imr-ship', bucket.imr.ship); setNum('imr-tax', bucket.imr.tax);
+  setNum('qme-usage', bucket.qme.reports); setNum('qme-pages', bucket.qme.pages); setNum('qme-ship', bucket.qme.ship); setNum('qme-tax', bucket.qme.tax);
+  setNum('sdt-usage', bucket.sdt.reports); setNum('sdt-pages', bucket.sdt.pages); setNum('sdt-ship', bucket.sdt.ship); setNum('sdt-tax', bucket.sdt.tax);
+  setNum('file-usage', bucket.file.reports); setNum('file-pages', bucket.file.pages); setNum('file-ship', bucket.file.ship); setNum('file-tax', bucket.file.tax);
+  setNum('nfp-usage', bucket.nfp.reports); setNum('nfp-pages', bucket.nfp.pages); setNum('nfp-ship', bucket.nfp.ship); setNum('nfp-tax', bucket.nfp.tax);
+  setNum('ond-usage', bucket.ond.reports); setNum('ond-pages', bucket.ond.pages); setNum('ond-ship', bucket.ond.ship); setNum('ond-tax', bucket.ond.tax);
+  // Retrieval
+  setNum('retrieval-usage', bucket.retrieval.orders); setNum('retrieval-pages', bucket.retrieval.pages);
+  const setText=(id,val,asMoney=false)=>{ const el=document.getElementById(id); if(!el) return; el.textContent = asMoney? fmtCurrency(val||0) : (val||0).toLocaleString('en-US'); };
+  setText('retrieval-ship', bucket.retrieval.ship, true); setText('retrieval-tax', bucket.retrieval.tax, true);
+  // Hidden metrics (use spans in this file?) We'll compute directly in calculateRecordRetrieval below using bucket values attached globally
+  window.__viewBucket = bucket; // store for RR computation
+  calculateAll();
+}
+
+// Money reader
+const readMoneyCell = (id)=>{ const el=document.getElementById(id); if(!el) return 0; const raw=(el.textContent||'').replace(/[$,\s]/g,''); const n=parseFloat(raw); return isNaN(n)?0:n; };
+
+function calculateAll(){
+  calculateReportServiceWithPages('imr',400,5000);
+  calculateReportServiceWithPages('qme',200,5000);
+  calculateReportServiceWithPages('sdt',400,5000);
+  calculateReportServiceWithPages('file',800,5000);
+  calculateAdHocService('nfp',250,0.20);
+  calculateAdHocService('ond',125,0.20);
+  calculateRecordRetrieval();
+  calculateSubtotals();
+}
+
+function calculateAdHocService(service, reportRate, pageRate){
+  const usage = parseFloat(document.getElementById(`${service}-usage`).value)||0;
+  const pages = parseFloat(document.getElementById(`${service}-pages`).value)||0;
+  const ship = readMoneyCell(`${service}-ship`); const tax=readMoneyCell(`${service}-tax`);
+  const subscriptionCost=0; const reportFees=usage*reportRate; const pageFees=pages*pageRate; const total=subscriptionCost+reportFees+pageFees+ship+tax;
+  document.getElementById(`${service}-subscription`).textContent=fmtCurrency(subscriptionCost);
+  document.getElementById(`${service}-report-fees`).textContent=fmtCurrency(reportFees);
+  document.getElementById(`${service}-page-fees`).textContent=fmtCurrency(pageFees);
+  document.getElementById(`${service}-total`).textContent=fmtCurrency(total);
+}
+
+function calculateReportServiceWithPages(service,included,basePrice){
+  const usage = parseInt(document.getElementById(`${service}-usage`).value)||0;
+  const pages = parseInt(document.getElementById(`${service}-pages`).value)||0;
+  const ship = readMoneyCell(`${service}-ship`); const tax=readMoneyCell(`${service}-tax`);
+  const units = usage / included; const subscriptionCost = Math.max(basePrice, units*basePrice);
+  const reportFees = usage * 25; const pageFees = pages * 0.10; const total = subscriptionCost + reportFees + pageFees + ship + tax;
+  document.getElementById(`${service}-units`).textContent=units.toFixed(3);
+  document.getElementById(`${service}-subscription`).textContent=fmtCurrency(subscriptionCost);
+  document.getElementById(`${service}-report-fees`).textContent=fmtCurrency(reportFees);
+  document.getElementById(`${service}-page-fees`).textContent=fmtCurrency(pageFees);
+  document.getElementById(`${service}-total`).textContent=fmtCurrency(total);
+}
+
+function calculateRecordRetrieval(){
+  const orders = parseInt(document.getElementById('retrieval-usage').value)||0;
+  const minBlock = Math.max(1, parseInt(document.getElementById('retrieval-per-sub-min').value)||300);
+  const maxBlock = Math.max(minBlock, parseInt(document.getElementById('retrieval-per-sub-max').value)||600);
+  let units = 0; if(orders>0){ units = orders<=maxBlock? 1 : 1 + (orders-maxBlock)/minBlock; }
+  const subscriptionCost = units * 33750;
+  // From current view bucket if available
+  const vb = window.__viewBucket || ensureAgg();
+  const witnessFees = orders * 15;
+  const roiFees = vb.retrieval.roi || 0;
+  const extraPages = vb.retrieval.extraPages || 0;
+  const pageFees = extraPages * 0.05;
+  const ship = vb.retrieval.ship || 0; const tax = vb.retrieval.tax || 0;
+  const reportFees = witnessFees + roiFees;
+  const total = subscriptionCost + reportFees + pageFees + ship + tax;
+  document.getElementById('retrieval-units').textContent = (units>0?units:1).toFixed(3);
+  document.getElementById('retrieval-subscription').textContent = fmtCurrency(subscriptionCost);
+  document.getElementById('retrieval-report-fees').textContent = fmtCurrency(reportFees);
+  document.getElementById('retrieval-page-fees').textContent = fmtCurrency(pageFees);
+  document.getElementById('retrieval-ship').textContent = fmtCurrency(ship);
+  document.getElementById('retrieval-tax').textContent = fmtCurrency(tax);
+  document.getElementById('retrieval-total').textContent = fmtCurrency(total);
+}
+
+function calculateSubtotals(){
+  const ids = ['imr','qme','sdt','file','nfp','ond'];
+  let reportSubtotal = 0; ids.forEach(id=>{ const s=(document.getElementById(`${id}-total`).textContent||'').replace(/[$,]/g,''); reportSubtotal += parseFloat(s)||0; });
+  const retr=(document.getElementById('retrieval-total').textContent||'').replace(/[$,]/g,''); const retrievalSubtotal = parseFloat(retr)||0;
+  document.getElementById('report-subtotal').textContent = fmtCurrency(reportSubtotal);
+  document.getElementById('retrieval-subtotal').textContent = fmtCurrency(retrievalSubtotal);
+  document.getElementById('summary-reports').textContent = reportSubtotal.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  document.getElementById('summary-retrieval').textContent = retrievalSubtotal.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  document.getElementById('grand-total').textContent = (reportSubtotal+retrievalSubtotal).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+
+async function loadCsvFromUrl(){
+  const url = (csvUrlInput.value||'').trim(); if(!url){ csvStatus.textContent='Enter a CSV URL'; return; }
+  const res = await fetch(url,{cache:'no-store'}); if(!res.ok){ csvStatus.textContent = 'HTTP '+res.status; return; }
+  const text = await res.text(); const parsed = parseCSV(text); if(!parsed||parsed.length<2){ csvStatus.textContent='No rows'; return; }
+  csvData = { header: parsed[0], rows: parsed.slice(1) }; csvStatus.textContent='Loaded data from CSV URL';
+  normalizeRows(); buildControls();
+  // default selections
+  monthSelect.value = allMonths[allMonths.length-1] || '';
+  insurerSelect.value = 'All';
+  runView();
+}
+
+function runView(){
+  // toggle range controls visibility
+  const showRange = timeframe.value==='custom';
+  rangeLabel.style.display = showRange? 'inline-block' : 'none';
+  rangeWrap.style.display = showRange? 'inline-flex' : 'none';
+  const showSingle = timeframe.value==='one';
+  monthSelect.style.display = showSingle? 'inline-block' : 'none';
+  const bucket = aggregateView();
+  applyBucket(bucket);
+}
+
+// Events
+loadCsvBtn.addEventListener('click', loadCsvFromUrl);
+monthSelect.addEventListener('change', runView);
+insurerSelect.addEventListener('change', runView);
+timeframe.addEventListener('change', runView);
+monthFrom.addEventListener('change', runView);
+monthTo.addEventListener('change', runView);
+
+csvFileInput.addEventListener('change', async (ev)=>{
+  const file = ev.target.files && ev.target.files[0]; if(!file) return; if(!/\.csv$/i.test(file.name)){ csvStatus.textContent='Please select a .csv file.'; return; }
+  const text = await file.text(); const parsed = parseCSV(text); if(!parsed||parsed.length<2){ csvStatus.textContent='Invalid CSV'; return; }
+  csvData = { header: parsed[0], rows: parsed.slice(1) }; csvStatus.textContent='CSV loaded.';
+  normalizeRows(); buildControls(); monthSelect.value = allMonths[allMonths.length-1] || ''; insurerSelect.value='All'; runView();
+});
+
+// Init
+(function init(){
+  // logo
+  const logoEl = document.getElementById('appLogo'); if(logoEl && LOGO_URL) logoEl.src = LOGO_URL;
+  // try auto-load by URL param/localStorage (will fail under file://, which is fine)
+  loadCsvFromUrl().catch(()=>{ csvStatus.textContent='Choose a CSV to begin'; });
+})();
+</script>
+</body>
+</html>

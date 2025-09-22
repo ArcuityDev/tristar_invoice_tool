@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ArcuityVizion Usage Calculator</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1500px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 30px;
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+            margin-bottom: 30px;
+        }
+        /* Title with logo */
+        .title-with-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .title-with-logo img.logo {
+            height: 288px; /* adjust as needed */
+            width: auto;
+            display: inline-block;
+        }
+        /* Month filter controls */
+        .controls-row {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 10px;
+            margin: 10px 0 20px 0;
+        }
+        .controls-row label {
+            font-size: 14px;
+            color: #34495e;
+        }
+        .controls-row select, .controls-row input[type="file"] {
+            padding: 6px 8px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        .controls-row .status {
+            font-size: 12px;
+            color: #666;
+        }
+        h2 {
+            color: #34495e;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: linear-gradient(90deg, #f3f4f6 0%, transparent 100%);
+            border-left: 4px solid #667eea;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        /* Improve width allocation for key columns on the first table */
+        .services-table col.service { width: 20%; }
+        .services-table col.reports { width: 8%; }
+        .services-table col.pages { width: 10%; }
+        .services-table col.per-sub { width: 8%; }
+        .services-table col.units { width: 8%; }
+        .services-table col.sub-cost { width: 10%; }
+        .services-table col.report-fees { width: 10%; }
+        .services-table col.page-fees { width: 9%; }
+        .services-table col.shipping { width: 9%; }
+        .services-table col.sales-tax { width: 10%; }
+        .services-table col.total { width: 10%; }
+        th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+        }
+        td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        /* Right-align numeric content */
+        td.calculated { text-align: right; }
+        tr:hover {
+            background: #f8f9fa;
+        }
+        input[type="number"] {
+            width: 100%;
+            padding: 8px;
+            border: 2px solid #e0e0e0;
+            border-radius: 4px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+            text-align: right;
+        }
+        /* Keep usage/pages inputs only as wide as needed for up to 10,000,000 */
+        .services-table td:nth-child(2) input[type="number"], /* Reports/Month */
+        .services-table td:nth-child(3) input[type="number"], /* Pages/Month */
+        #retrieval-usage,
+        #retrieval-pages,
+        #extra-pages {
+            width: 11ch; /* fits 10,000,000 comfortably */
+            max-width: 100%;
+        }
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        .calculated {
+            background: #f0f4f8;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        .overage {
+            background: #fff3cd;
+            color: #856404;
+            font-weight: 600;
+        }
+        .total-row {
+            background: linear-gradient(90deg, #e8f5e9 0%, #f1f8e9 100%);
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+        .grand-total {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+        .notes {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 4px;
+        }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 10px 5px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="title-with-logo">
+            <img id="appLogo" src="logo.png" alt="ArcuityVizion Logo" class="logo">
+            <span>ArcuityVizion Usage Calculator</span>
+        </h1>
+        <div class="controls-row">
+            <label for="monthSelect">Month:</label>
+            <select id="monthSelect" disabled>
+                <option>Loading...</option>
+            </select>
+            <span class="status" id="csvStatus"></span>
+            <input type="file" id="csvFileInput" accept=".csv" style="display:none">
+            <input type="url" id="csvUrlInput" placeholder="https://.../shirlei_report_all_data.csv" style="min-width:320px;" />
+            <button id="loadCsvBtn" type="button">Load CSV URL</button>
+        </div>
+        
+        <h2>Complex Report Generation Services</h2>
+        <table class="services-table">
+            <colgroup>
+                <col class="service">
+                <col class="reports">
+                <col class="pages">
+                <col class="per-sub">
+                <col class="units">
+                <col class="sub-cost">
+                <col class="report-fees">
+                <col class="page-fees">
+                <col class="shipping">
+                <col class="sales-tax">
+                <col class="total">
+            </colgroup>
+            <tr>
+                <th>Service</th>
+                <th>Reports/Month</th>
+                <th>Pages/Month</th>
+                <th>Reports per Subscription</th>
+                <th>Subscription Units</th>
+                <th>Subscription Cost</th>
+                <th>Report Fees ($25 ea)</th>
+                <th>Page Fees ($0.10 ea)</th>
+                <th>Shipping</th>
+                <th>Sales Tax</th>
+                <th>Total Cost</th>
+            </tr>
+            <tr>
+                <td>IMR Report Generation</td>
+                <td><input type="number" id="imr-usage" min="0" value="180" onchange="calculateAll()"></td>
+                <td><input type="number" id="imr-pages" min="0" value="1800" onchange="calculateAll()"></td>
+                <td>400</td>
+                <td class="calculated" id="imr-units">1</td>
+                <td class="calculated" id="imr-subscription">$5,000.00</td>
+                <td class="calculated" id="imr-report-fees">$4,500.00</td>
+                <td class="calculated" id="imr-page-fees">$180.00</td>
+                <td class="calculated" id="imr-ship">$0.00</td>
+                <td class="calculated" id="imr-tax">$0.00</td>
+                <td class="calculated" id="imr-total">$9,680.00</td>
+            </tr>
+            <tr>
+                <td>QME Report Prep</td>
+                <td><input type="number" id="qme-usage" min="0" value="100" onchange="calculateAll()"></td>
+                <td><input type="number" id="qme-pages" min="0" value="1000" onchange="calculateAll()"></td>
+                <td>200</td>
+                <td class="calculated" id="qme-units">1</td>
+                <td class="calculated" id="qme-subscription">$5,000.00</td>
+                <td class="calculated" id="qme-report-fees">$2,500.00</td>
+                <td class="calculated" id="qme-page-fees">$100.00</td>
+                <td class="calculated" id="qme-ship">$0.00</td>
+                <td class="calculated" id="qme-tax">$0.00</td>
+                <td class="calculated" id="qme-total">$7,600.00</td>
+            </tr>
+            <tr>
+                <td>SDT Response</td>
+                <td><input type="number" id="sdt-usage" min="0" value="100" onchange="calculateAll()"></td>
+                <td><input type="number" id="sdt-pages" min="0" value="500" onchange="calculateAll()"></td>
+                <td>400</td>
+                <td class="calculated" id="sdt-units">1</td>
+                <td class="calculated" id="sdt-subscription">$5,000.00</td>
+                <td class="calculated" id="sdt-report-fees">$2,500.00</td>
+                <td class="calculated" id="sdt-page-fees">$50.00</td>
+                <td class="calculated" id="sdt-ship">$0.00</td>
+                <td class="calculated" id="sdt-tax">$0.00</td>
+                <td class="calculated" id="sdt-total">$7,550.00</td>
+            </tr>
+            <tr>
+                <td>File and Serve</td>
+                <td><input type="number" id="file-usage" min="0" value="600" onchange="calculateAll()"></td>
+                <td><input type="number" id="file-pages" min="0" value="3000" onchange="calculateAll()"></td>
+                <td>800</td>
+                <td class="calculated" id="file-units">1</td>
+                <td class="calculated" id="file-subscription">$5,000.00</td>
+                <td class="calculated" id="file-report-fees">$15,000.00</td>
+                <td class="calculated" id="file-page-fees">$300.00</td>
+                <td class="calculated" id="file-ship">$0.00</td>
+                <td class="calculated" id="file-tax">$0.00</td>
+                <td class="calculated" id="file-total">$20,300.00</td>
+            </tr>
+            <tr>
+                <td>New File Prep</td>
+                <td><input type="number" id="nfp-usage" min="0" value="0" onchange="calculateAll()"></td>
+                <td><input type="number" id="nfp-pages" min="0" value="0" onchange="calculateAll()"></td>
+                <td>-</td>
+                <td class="calculated" id="nfp-units">-</td>
+                <td class="calculated" id="nfp-subscription">$0.00</td>
+                <td class="calculated" id="nfp-report-fees">$0.00</td>
+                <td class="calculated" id="nfp-page-fees">$0.00</td>
+                <td class="calculated" id="nfp-ship">$0.00</td>
+                <td class="calculated" id="nfp-tax">$0.00</td>
+                <td class="calculated" id="nfp-total">$0.00</td>
+            </tr>
+            <tr>
+                <td>On-Demand</td>
+                <td><input type="number" id="ond-usage" min="0" value="0" onchange="calculateAll()"></td>
+                <td><input type="number" id="ond-pages" min="0" value="0" onchange="calculateAll()"></td>
+                <td>-</td>
+                <td class="calculated" id="ond-units">-</td>
+                <td class="calculated" id="ond-subscription">$0.00</td>
+                <td class="calculated" id="ond-report-fees">$0.00</td>
+                <td class="calculated" id="ond-page-fees">$0.00</td>
+                <td class="calculated" id="ond-ship">$0.00</td>
+                <td class="calculated" id="ond-tax">$0.00</td>
+                <td class="calculated" id="ond-total">$0.00</td>
+            </tr>
+            <tr class="total-row">
+                <td colspan="10">Report Generation Subtotal</td>
+                <td class="calculated" id="report-subtotal">$47,630.00</td>
+            </tr>
+        </table>
+
+        <h2>Record Retrieval Services</h2>
+        <table>
+            <tr>
+                <th>Service</th>
+                <th>Monthly Usage</th>
+                <th>Pricing Tier</th>
+                <th>Rate</th>
+                <th>Base Cost</th>
+                <th>Additional Charges</th>
+                <th>Total Cost</th>
+            </tr>
+            <tr>
+                <td>Record Retrieval Orders</td>
+                <td>
+                    <label for="retrieval-usage" style="display:block; font-size:12px; color:#555;">Orders</label>
+                    <input type="number" id="retrieval-usage" min="0" value="300" onchange="calculateAll()">
+                    <label for="retrieval-pages" style="display:block; margin-top:6px; font-size:12px; color:#555;">Total Pages</label>
+                    <input type="number" id="retrieval-pages" min="0" value="0" onchange="calculateAll()" placeholder="e.g. 150000">
+                </td>
+                <td id="retrieval-tier">1-299: $112.50/order</td>
+                <td class="calculated" id="retrieval-rate">$112.50</td>
+                <td class="calculated" id="retrieval-base">$33,750.00</td>
+                <td>-</td>
+                <td class="calculated" id="retrieval-total">$33,750.00</td>
+            </tr>
+            <tr>
+                <td>Pages Over 500 (per document)</td>
+                <td><input type="number" id="extra-pages" min="0" value="0" onchange="calculateAll()" placeholder="Total extra pages"></td>
+                <td>Over 500 pages</td>
+                <td>$0.05/page</td>
+                <td>-</td>
+                <td class="calculated" id="extra-pages-cost">$0.00</td>
+                <td class="calculated" id="extra-pages-total">$0.00</td>
+            </tr>
+            <tr class="total-row">
+                <td colspan="6">Record Retrieval Subtotal</td>
+                <td class="calculated" id="retrieval-subtotal">$33,750.00</td>
+            </tr>
+        </table>
+
+        <h2>Monthly Summary</h2>
+        <table>
+            <tr>
+                <th>Category</th>
+                <th>Cost</th>
+            </tr>
+            <tr>
+                <td>Report Generation Services</td>
+                <td class="calculated" id="summary-reports">$22,500.00</td>
+            </tr>
+            <tr>
+                <td>Record Retrieval Services</td>
+                <td class="calculated" id="summary-retrieval">$33,750.00</td>
+            </tr>
+            <tr class="grand-total">
+                <td>TOTAL MONTHLY COST</td>
+                <td class="calculated" id="grand-total">$56,250.00</td>
+            </tr>
+        </table>
+
+        <div class="notes">
+            <h3>📝 Pricing Structure Explained:</h3>
+            <ul>
+                <li><strong>Proportional Subscription Pricing:</strong> You pay for exactly what you use:
+                    <ul>
+                        <li>IMR: $5,000 per 400 reports (proportional billing)</li>
+                        <li>QME: $5,000 per 200 reports (proportional billing)</li>
+                        <li>SDT: $5,000 per 400 reports (proportional billing)</li>
+                        <li>File & Serve: $5,000 per 800 reports (proportional billing)</li>
+                        <li>Each Report: $2,500 per 100 reports (includes $25/report fee)</li>
+                    </ul>
+                </li>
+                <li><strong>How Proportional Billing Works:</strong>
+                    <ul>
+                        <li>450 IMR reports = 1.125 units (1 full + 50/400 partial) = $5,625</li>
+                        <li>No need to buy full blocks - pay only for what you use!</li>
+                    </ul>
+                </li>
+                <li><strong>Additional Fees (IMR, QME, SDT, File & Serve ONLY):</strong>
+                    <ul>
+                        <li>$25.00 per report (applies to ALL reports)</li>
+                        <li>$0.10 per page (applies to ALL pages)</li>
+                    </ul>
+                </li>
+                <li><strong>"Each Report" Service:</strong> The $25 per report fee is already included in the $2,500 subscription</li>
+                <li><strong>Example:</strong> 450 IMR reports with 4,500 pages:
+                    <ul>
+                        <li>Subscription: 1.125 units × $5,000 = $5,625</li>
+                        <li>Report fees: 450 × $25 = $11,250</li>
+                        <li>Page fees: 4,500 × $0.10 = $450</li>
+                        <li>Total: $17,325</li>
+                    </ul>
+                </li>
+                <li><strong>Record Retrieval Pricing Tiers:</strong>
+                    <ul>
+                        <li>1-299 orders = $112.50/order</li>
+                        <li>300-600 orders = Included in $33,750 subscription</li>
+                        <li>601-1000 orders = $105/order (for orders above 600)</li>
+                        <li>1000+ orders = Negotiated rate</li>
+                    </ul>
+                </li>
+                <li><strong>Documents over 500 pages</strong> charged at $0.05 per additional page</li>
+            </ul>
+        </div>
+
+        <div style="text-align: center; margin-top: 30px;">
+            <button onclick="resetToDefaults()">Reset to Current Values</button>
+            <button onclick="testHighUsage()">Test High Usage Example</button>
+            <button onclick="exportData()">Export to CSV</button>
+        </div>
+    </div>
+
+    <script>
+        // --- Config via URL parameters ---
+        const params = new URLSearchParams(window.location.search);
+        let CSV_URL = params.get('csvUrl') || localStorage.getItem('csvUrl') || 'shirlei_report_all_data.csv';
+        const LOGO_URL = params.get('logoUrl') || 'logo.png';
+
+        // Apply logo URL if provided
+        const logoEl = document.getElementById('appLogo');
+        if (logoEl && LOGO_URL) {
+            logoEl.src = LOGO_URL;
+        }
+
+        // --- Month selector powered by CSV ---
+        const MONTH_NAMES = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+        const monthSelect = document.getElementById('monthSelect');
+        const csvStatus = document.getElementById('csvStatus');
+        const csvFileInput = document.getElementById('csvFileInput');
+        const csvUrlInput = document.getElementById('csvUrlInput');
+        const loadCsvBtn = document.getElementById('loadCsvBtn');
+        let csvData = null; // { header:[], rows:[] }
+        let monthAgg = {};  // { 'YYYY-MM': { imr:{reports,pages}, qme:{...}, sdt:{...}, file:{...}, nfp:{...}, ond:{...}, retrieval:{orders,pages} } }
+
+        function parseCSV(text) {
+            const rows = [];
+            let i = 0, field = '', row = [], inQuotes = false;
+            while (i < text.length) {
+                const c = text[i];
+                if (inQuotes) {
+                    if (c === '"') {
+                        if (text[i+1] === '"') { field += '"'; i += 2; continue; }
+                        inQuotes = false; i++; continue;
+                    }
+                    field += c; i++; continue;
+                } else {
+                    if (c === '"') { inQuotes = true; i++; continue; }
+                    if (c === ',') { row.push(field); field=''; i++; continue; }
+                    if (c === '\n') { row.push(field); rows.push(row); row=[]; field=''; i++; continue; }
+                    if (c === '\r') { i++; continue; }
+                    field += c; i++; continue;
+                }
+            }
+            if (field.length>0 || row.length>0) { row.push(field); rows.push(row); }
+            return rows;
+        }
+
+        function yyyymm(dateStr) {
+            // Handles m/d/yyyy or mm/dd/yyyy
+            if (!dateStr) return null;
+            const parts = dateStr.split('/');
+            if (parts.length !== 3) return null;
+            const m = String(parseInt(parts[0],10)).padStart(2,'0');
+            const y = parts[2];
+            return `${y}-${m}`;
+        }
+
+        function monthLabel(key) {
+            const [y,m] = key.split('-');
+            return `${MONTH_NAMES[parseInt(m,10)-1]} ${y}`;
+        }
+
+        function ensureAgg(bucket) {
+            const svcTemplate = () => ({ reports:0, pages:0, ship:0, tax:0 });
+            return bucket || { imr:svcTemplate(), qme:svcTemplate(), sdt:svcTemplate(), file:svcTemplate(), nfp:svcTemplate(), ond:svcTemplate(), retrieval:{orders:0,pages:0} };
+        }
+
+        function mapRequestType(rt) {
+            // Map RequestType from CSV to service IDs in the UI (case-insensitive, robust)
+            if (!rt) return null;
+            const s = String(rt).toLowerCase();
+            if (s === 'arcuity imr') return 'imr';
+            if (s === 'arcuity sdt response') return 'sdt';
+            if (s === 'arcuity file and serve') return 'file';
+            if (s === 'arcuity file prep' || s === 'arcuity file prep' || s === 'arcuity file  prep' || s === 'arcuity file  preparation' || s === 'arcuity file preparation' || s === 'arcuity file  prep' || s === 'arcuity file  pre') return 'nfp';
+            if (s === 'arcuity file prep' || s === 'arcuity file  prep' || s.includes('file prep')) return 'nfp';
+            if (s === 'arcuity on-demand' || s === 'arcuity on demand') return 'ond';
+            // QME variants
+            if (s === 'arcuity qme' || s === 'arcuity qme report prep' || s.includes('qme')) return 'qme';
+            return null;
+        }
+
+        function pickPages(pre, post) {
+            // Prefer PostDupe, fallback to Predupe, else 0
+            const toInt = v => { const n = parseInt((v||'').toString().replace(/[^0-9-]/g,''),10); return isNaN(n)?0:n; };
+            const postN = toInt(post);
+            const preN = toInt(pre);
+            return postN || preN || 0;
+        }
+
+        function buildAggregates() {
+            if (!csvData) return;
+            const header = csvData.header;
+            const rows = csvData.rows;
+            const idxDate = header.indexOf('date_received');
+            const idxRT = header.indexOf('RequestType');
+            const idxPre = header.indexOf('PredupePageCount');
+            const idxPost = header.indexOf('PostDupePageCount');
+            const idxShip = header.indexOf('Shipping');
+            const idxTax = header.indexOf('SalesTax');
+            if (idxDate === -1 || idxRT === -1) return;
+            monthAgg = {};
+            for (const r of rows) {
+                const key = yyyymm(r[idxDate]);
+                if (!key) continue;
+                const bucket = monthAgg[key] = ensureAgg(monthAgg[key]);
+                const svc = mapRequestType(r[idxRT]);
+                const pages = pickPages(r[idxPre], r[idxPost]);
+                const toMoney = v => { if (v==null) return 0; const s = String(v).replace(/[$,\s]/g,''); const n = parseFloat(s); return isNaN(n)?0:n; };
+                const ship = idxShip !== -1 ? toMoney(r[idxShip]) : 0;
+                const tax  = idxTax  !== -1 ? toMoney(r[idxTax])  : 0;
+                if (svc) {
+                    bucket[svc].reports += 1;
+                    bucket[svc].pages += pages;
+                    bucket[svc].ship += ship;
+                    bucket[svc].tax  += tax;
+                }
+                // Record Retrieval Orders aggregation (by orders count)
+                if (r[idxRT] && r[idxRT].includes('Record Retrieval')) {
+                    bucket.retrieval.orders += 1;
+                    bucket.retrieval.pages += pages;
+                }
+            }
+        }
+
+        function populateMonthDropdown() {
+            const keys = Object.keys(monthAgg).sort();
+            monthSelect.innerHTML = '';
+            if (keys.length === 0) {
+                monthSelect.disabled = true;
+                monthSelect.innerHTML = '<option>No months found</option>';
+                return;
+            }
+            for (const k of keys) {
+                const opt = document.createElement('option');
+                opt.value = k;
+                opt.textContent = monthLabel(k);
+                monthSelect.appendChild(opt);
+            }
+            monthSelect.disabled = false;
+        }
+
+        function applyMonth(key) {
+            const bucket = monthAgg[key];
+            if (!bucket) return;
+            const setNum = (id, val) => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                if (/-ship$/.test(id) || /-tax$/.test(id)) {
+                    const num = parseFloat(val || 0);
+                    el.textContent = fmtCurrency(isNaN(num) ? 0 : num);
+                } else {
+                    el.value = val;
+                }
+            };
+            setNum('imr-usage', bucket.imr.reports);
+            setNum('imr-pages', bucket.imr.pages);
+            setNum('imr-ship', bucket.imr.ship);
+            setNum('imr-tax', bucket.imr.tax);
+            setNum('qme-usage', bucket.qme.reports);
+            setNum('qme-pages', bucket.qme.pages);
+            setNum('qme-ship', bucket.qme.ship);
+            setNum('qme-tax', bucket.qme.tax);
+            setNum('sdt-usage', bucket.sdt.reports);
+            setNum('sdt-pages', bucket.sdt.pages);
+            setNum('sdt-ship', bucket.sdt.ship);
+            setNum('sdt-tax', bucket.sdt.tax);
+            setNum('file-usage', bucket.file.reports);
+            setNum('file-pages', bucket.file.pages);
+            setNum('file-ship', bucket.file.ship);
+            setNum('file-tax', bucket.file.tax);
+            setNum('nfp-usage', bucket.nfp.reports);
+            setNum('nfp-pages', bucket.nfp.pages);
+            setNum('nfp-ship', bucket.nfp.ship);
+            setNum('nfp-tax', bucket.nfp.tax);
+            setNum('ond-usage', bucket.ond.reports);
+            setNum('ond-pages', bucket.ond.pages);
+            setNum('ond-ship', bucket.ond.ship);
+            setNum('ond-tax', bucket.ond.tax);
+            setNum('retrieval-usage', bucket.retrieval.orders);
+            setNum('retrieval-pages', bucket.retrieval.pages);
+            calculateAll();
+        }
+
+        async function tryLoadCSV() {
+            try {
+                const res = await fetch(CSV_URL, { cache: 'no-store' });
+                if (!res.ok) throw new Error('HTTP '+res.status);
+                const text = await res.text();
+                const parsed = parseCSV(text);
+                if (!parsed || parsed.length < 2) throw new Error('No rows');
+                csvData = { header: parsed[0], rows: parsed.slice(1) };
+                csvStatus.textContent = 'Loaded data from CSV';
+                buildAggregates();
+                populateMonthDropdown();
+                const keys = Object.keys(monthAgg).sort();
+                if (keys.length) applyMonth(keys[keys.length-1]); // default to latest
+            } catch (e) {
+                csvStatus.textContent = 'Could not auto-load CSV. Please choose the file.';
+                csvFileInput.style.display = 'inline-block';
+                monthSelect.disabled = true;
+            }
+        }
+
+        // Manual URL loader
+        if (csvUrlInput) {
+            csvUrlInput.value = CSV_URL || '';
+        }
+        if (loadCsvBtn) {
+            loadCsvBtn.addEventListener('click', async () => {
+                const url = (csvUrlInput && csvUrlInput.value || '').trim();
+                if (!url) { csvStatus.textContent = 'Please enter a CSV URL.'; return; }
+                CSV_URL = url; // update source
+                localStorage.setItem('csvUrl', CSV_URL);
+                csvStatus.textContent = 'Loading from URL...';
+                tryLoadCSV();
+            });
+        }
+
+        // Drag-and-drop CSV support anywhere on page
+        window.addEventListener('dragover', (e) => { e.preventDefault(); });
+        window.addEventListener('drop', async (e) => {
+            e.preventDefault();
+            const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+            if (!file) return;
+            if (!/\.csv$/i.test(file.name)) { csvStatus.textContent = 'Please drop a .csv file.'; return; }
+            const text = await file.text();
+            const parsed = parseCSV(text);
+            if (!parsed || parsed.length < 2) { csvStatus.textContent='Invalid CSV'; return; }
+            csvData = { header: parsed[0], rows: parsed.slice(1) };
+            csvStatus.textContent = `CSV loaded from dropped file: ${file.name}`;
+            buildAggregates();
+            populateMonthDropdown();
+            const keys = Object.keys(monthAgg).sort();
+            if (keys.length) applyMonth(keys[keys.length-1]);
+        });
+
+        // Manual URL loader
+        if (csvUrlInput) {
+            csvUrlInput.value = CSV_URL || '';
+        }
+        if (loadCsvBtn) {
+            loadCsvBtn.addEventListener('click', async () => {
+                const url = (csvUrlInput && csvUrlInput.value || '').trim();
+                if (!url) { csvStatus.textContent = 'Please enter a CSV URL.'; return; }
+                CSV_URL = url; // update source
+                localStorage.setItem('csvUrl', CSV_URL);
+                csvStatus.textContent = 'Loading from URL...';
+                // reload data
+                tryLoadCSV();
+            });
+        }
+
+        // Drag-and-drop CSV support anywhere on page
+        window.addEventListener('dragover', (e) => { e.preventDefault(); });
+        window.addEventListener('drop', async (e) => {
+            e.preventDefault();
+            const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+            if (!file) return;
+            if (!/\.csv$/i.test(file.name)) { csvStatus.textContent = 'Please drop a .csv file.'; return; }
+            const text = await file.text();
+            const parsed = parseCSV(text);
+            if (!parsed || parsed.length < 2) { csvStatus.textContent='Invalid CSV'; return; }
+            csvData = { header: parsed[0], rows: parsed.slice(1) };
+            csvStatus.textContent = `CSV loaded from dropped file: ${file.name}`;
+            buildAggregates();
+            populateMonthDropdown();
+            const keys = Object.keys(monthAgg).sort();
+            if (keys.length) applyMonth(keys[keys.length-1]);
+        });
+
+        monthSelect.addEventListener('change', () => {
+            const key = monthSelect.value;
+            applyMonth(key);
+        });
+
+        csvFileInput.addEventListener('change', async (ev) => {
+            const file = ev.target.files && ev.target.files[0];
+            if (!file) return;
+            const text = await file.text();
+            const parsed = parseCSV(text);
+            if (!parsed || parsed.length < 2) { csvStatus.textContent='Invalid CSV'; return; }
+            csvData = { header: parsed[0], rows: parsed.slice(1) };
+            csvStatus.textContent = 'CSV loaded.';
+            buildAggregates();
+            populateMonthDropdown();
+            const keys = Object.keys(monthAgg).sort();
+            if (keys.length) applyMonth(keys[keys.length-1]);
+        });
+        // Currency formatter
+        const fmtCurrency = (n) => {
+            const num = Number(n) || 0;
+            return '$' + num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        };
+
+        // Helper to read money from calculated cells (e.g., shipping/tax)
+        const readMoneyCell = (id) => {
+            const el = document.getElementById(id);
+            if (!el) return 0;
+            const raw = (el.textContent || '').toString();
+            const cleaned = raw.replace(/[$,\s]/g, '');
+            const num = parseFloat(cleaned);
+            return isNaN(num) ? 0 : num;
+        };
+
+        function calculateAll() {
+            // Report Generation Calculations
+            calculateReportServiceWithPages('imr', 400, 5000);
+            calculateReportServiceWithPages('qme', 200, 5000);
+            calculateReportServiceWithPages('sdt', 400, 5000);
+            calculateReportServiceWithPages('file', 800, 5000);
+            // Ad-hoc services (no subscription)
+            calculateAdHocService('nfp', 250, 0.20); // $250/report + $0.20/page
+            calculateAdHocService('ond', 125, 0.20); // $125/report + $0.20/page
+            
+            // Record Retrieval Calculations
+            calculateRecordRetrieval();
+            
+            // Calculate Subtotals
+            calculateSubtotals();
+        }
+
+        function calculateAdHocService(service, reportRate, pageRate) {
+            const usage = parseFloat(document.getElementById(`${service}-usage`).value) || 0;
+            const pages = parseFloat(document.getElementById(`${service}-pages`).value) || 0;
+            const shipping = readMoneyCell(`${service}-ship`);
+            const salesTax = readMoneyCell(`${service}-tax`);
+            const subscriptionCost = 0;
+            const reportFees = usage * reportRate;
+            const pageFees = pages * pageRate;
+            const total = subscriptionCost + reportFees + pageFees + shipping + salesTax;
+
+            // Update display
+            document.getElementById(`${service}-subscription`).textContent = fmtCurrency(subscriptionCost);
+            document.getElementById(`${service}-report-fees`).textContent = fmtCurrency(reportFees);
+            document.getElementById(`${service}-page-fees`).textContent = fmtCurrency(pageFees);
+            document.getElementById(`${service}-total`).textContent = fmtCurrency(total);
+        }
+
+        function calculateReportServiceWithPages(service, included, basePrice) {
+            const usage = parseInt(document.getElementById(`${service}-usage`).value) || 0;
+            const pages = parseInt(document.getElementById(`${service}-pages`).value) || 0;
+            const shipping = readMoneyCell(`${service}-ship`);
+            const salesTax = readMoneyCell(`${service}-tax`);
+            
+            // Calculate proportional subscription (minimum base price)
+            const units = usage / included;
+            const subscriptionCost = Math.max(basePrice, units * basePrice);
+            
+            // Calculate fees
+            const reportFees = usage * 25; // $25 per report
+            const pageFees = pages * 0.10; // $0.10 per page
+            
+            // Total = proportional subscription + report fees + page fees
+            const total = subscriptionCost + reportFees + pageFees + shipping + salesTax;
+            
+            // Update display
+            document.getElementById(`${service}-units`).textContent = units.toFixed(3);
+            document.getElementById(`${service}-subscription`).textContent = fmtCurrency(subscriptionCost);
+            document.getElementById(`${service}-report-fees`).textContent = fmtCurrency(reportFees);
+            document.getElementById(`${service}-page-fees`).textContent = fmtCurrency(pageFees);
+            document.getElementById(`${service}-total`).textContent = fmtCurrency(total);
+        }
+
+
+        function calculateRecordRetrieval() {
+            const usage = parseInt(document.getElementById('retrieval-usage').value) || 0;
+            const pages = parseInt(document.getElementById('retrieval-pages').value) || 0;
+            let rate, tier, baseCost;
+            
+            if (usage <= 299) {
+                rate = 112.50;
+                tier = "1-299: $112.50/order";
+                baseCost = usage * rate;
+            } else if (usage <= 600) {
+                rate = 112.50;
+                tier = "300-600: Subscription";
+                baseCost = 33750; // Fixed subscription cost
+            } else if (usage <= 1000) {
+                rate = 105.00;
+                tier = "601-1000: $105/order";
+                baseCost = 33750 + ((usage - 600) * rate);
+            } else {
+                rate = 105.00; // Default, should be negotiated
+                tier = "1000+: Negotiated";
+                baseCost = 33750 + ((usage - 600) * rate);
+            }
+            
+            // Compute extra pages over the included 500 pages per order
+            const baselinePages = usage * 500;
+            const extraPages = Math.max(0, pages - baselinePages);
+            // Reflect computed extra pages in the existing UI field
+            const extraPagesInput = document.getElementById('extra-pages');
+            if (extraPagesInput) extraPagesInput.value = extraPages;
+            const extraPagesCost = extraPages * 0.05;
+            const total = baseCost + extraPagesCost;
+            
+            document.getElementById('retrieval-tier').textContent = tier;
+            document.getElementById('retrieval-rate').textContent = fmtCurrency(rate);
+            document.getElementById('retrieval-base').textContent = fmtCurrency(baseCost);
+            document.getElementById('extra-pages-cost').textContent = fmtCurrency(extraPagesCost);
+            document.getElementById('extra-pages-total').textContent = fmtCurrency(extraPagesCost);
+            document.getElementById('retrieval-total').textContent = fmtCurrency(total);
+        }
+
+        function calculateSubtotals() {
+            // Report Generation Subtotal
+            const reportServices = ['imr', 'qme', 'sdt', 'file', 'nfp', 'ond'];
+            let reportSubtotal = 0;
+            reportServices.forEach(service => {
+                const s = document.getElementById(`${service}-total`).textContent || '';
+                const total = parseFloat(s.replace(/[$,]/g, '')) || 0;
+                reportSubtotal += total;
+            });
+            
+            // Record Retrieval Subtotal
+            const retrievalTotal = parseFloat((document.getElementById('retrieval-total').textContent || '').replace(/[$,]/g, '')) || 0;
+            const extraPagesTotal = parseFloat((document.getElementById('extra-pages-total').textContent || '').replace(/[$,]/g, '')) || 0;
+            const retrievalSubtotal = retrievalTotal + extraPagesTotal;
+            
+            // Update displays
+            document.getElementById('report-subtotal').textContent = fmtCurrency(reportSubtotal);
+            document.getElementById('retrieval-subtotal').textContent = fmtCurrency(retrievalSubtotal);
+            document.getElementById('summary-reports').textContent = `${reportSubtotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            document.getElementById('summary-retrieval').textContent = `${retrievalSubtotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            document.getElementById('grand-total').textContent = `${(reportSubtotal + retrievalSubtotal).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        }
+
+        function resetToDefaults() {
+            document.getElementById('imr-usage').value = 180;
+            document.getElementById('imr-pages').value = 1800;
+            document.getElementById('qme-usage').value = 100;
+            document.getElementById('qme-pages').value = 1000;
+            document.getElementById('sdt-usage').value = 100;
+            document.getElementById('sdt-pages').value = 500;
+            document.getElementById('file-usage').value = 600;
+            document.getElementById('file-pages').value = 3000;
+            document.getElementById('nfp-usage').value = 0;
+            document.getElementById('nfp-pages').value = 0;
+            document.getElementById('ond-usage').value = 0;
+            document.getElementById('ond-pages').value = 0;
+            document.getElementById('retrieval-usage').value = 300;
+            document.getElementById('extra-pages').value = 0;
+            calculateAll();
+        }
+        
+        function testHighUsage() {
+            // Example with higher usage to show proportional subscription units
+            document.getElementById('imr-usage').value = 450;  // 1.125 units
+            document.getElementById('imr-pages').value = 4500;
+            document.getElementById('qme-usage').value = 250;  // 1.25 units
+            document.getElementById('qme-pages').value = 2500;
+            document.getElementById('sdt-usage').value = 500;  // 1.25 units
+            document.getElementById('sdt-pages').value = 2500;
+            document.getElementById('file-usage').value = 1000; // 1.25 units
+            document.getElementById('file-pages').value = 5000;
+            document.getElementById('nfp-usage').value = 40;
+            document.getElementById('nfp-pages').value = 8000;
+            document.getElementById('ond-usage').value = 25;
+            document.getElementById('ond-pages').value = 2500;
+            document.getElementById('retrieval-usage').value = 700;
+            document.getElementById('extra-pages').value = 1000;
+            calculateAll();
+        }
+
+        function exportData() {
+            let csv = 'Service,Reports,Pages,Reports per Unit,Subscription Units,Subscription Cost,Report Fees,Page Fees,Total\n';
+            
+            // Add report services
+            const services = [
+                { name: 'IMR Report Generation', id: 'imr', perUnit: 400, hasPages: true },
+                { name: 'QME Report Prep', id: 'qme', perUnit: 200, hasPages: true },
+                { name: 'SDT Response', id: 'sdt', perUnit: 400, hasPages: true },
+                { name: 'File and Serve', id: 'file', perUnit: 800, hasPages: true },
+                { name: 'New File Prep', id: 'nfp', perUnit: '-', hasPages: true },
+                { name: 'On-Demand', id: 'ond', perUnit: '-', hasPages: true }
+            ];
+            
+            services.forEach(service => {
+                const usage = document.getElementById(`${service.id}-usage`).value;
+                const pages = service.hasPages ? document.getElementById(`${service.id}-pages`).value : 'N/A';
+                const units = document.getElementById(`${service.id}-units`).textContent;
+                const subscriptionCost = document.getElementById(`${service.id}-subscription`).textContent;
+                const reportFees = service.hasPages ? document.getElementById(`${service.id}-report-fees`).textContent : 'N/A';
+                const pageFees = service.hasPages ? document.getElementById(`${service.id}-page-fees`).textContent : 'N/A';
+                const total = document.getElementById(`${service.id}-total`).textContent;
+                csv += `${service.name},${usage},${pages},${service.perUnit},${units},${subscriptionCost},${reportFees},${pageFees},${total}\n`;
+            });
+            
+            // Add retrieval
+            const retrievalUsage = document.getElementById('retrieval-usage').value;
+            const retrievalTotal = document.getElementById('retrieval-total').textContent;
+            csv += `Record Retrieval,${retrievalUsage},N/A,600,1,$33750,N/A,N/A,${retrievalTotal}\n`;
+            
+            // Create download link
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'arcuity_usage_report.csv';
+            a.click();
+        }
+
+        // Initialize calculations on page load and attempt to load CSV
+        (function init(){
+            calculateAll();
+            tryLoadCSV();
+        })();
+    </script>
+</body>
+</html>
