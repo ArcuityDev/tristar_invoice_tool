@@ -1,6 +1,6 @@
-# ArcuityVizion Usage Calculator
+# Tristar Subscription Pricing Tool — Working Files
 
-Interactive pricing calculator for Arcuity services. Select a month from your CSV report and the tool fills in usage and page counts for each service, preserving your existing pricing math.
+This directory contains historical and in‑progress variants of the Tristar subscription pricing tool. The primary, supported files live at the repository root. Keep these for context/audit.
 
 ## Live hosting options
 
@@ -13,6 +13,7 @@ Interactive pricing calculator for Arcuity services. Select a month from your CS
 Place these at the repository root:
 
 - `index.html` — Main app (includes month dropdown and CSV loader)
+- `index_timeframe.html` — Timeframe-filtered view variant
 - `shirlei_report_all_data.csv` — Data source (export from your backend)
 - `logo.png` — Logo displayed in the header
 
@@ -37,6 +38,13 @@ Expected columns (header row):
 
 Page counts use `PostDupePageCount` if present; otherwise `PredupePageCount`; otherwise `0`.
 
+## Data generation
+
+- Script: `shirlei_report.py` (in repo root)
+  - Produces `shirlei_report_all_data.csv` at the repo root
+  - Usage: `python shirlei_report.py`
+  - Sample input: `sample reports/shirlei_report_20250707.csv`
+
 ## How the month filter works
 
 - The app parses `shirlei_report_all_data.csv` client‑side and groups data by `YYYY-MM` from `date_received`.
@@ -58,17 +66,28 @@ Page counts use `PostDupePageCount` if present; otherwise `PredupePageCount`; ot
 2. Repo Settings → Pages → Source: Deploy from a branch → select default branch and root.
 3. Wait for the build, then visit the Pages URL.
 
+## CI validation
+
+Lightweight CSV validation runs on PRs via `.github/workflows/validate-csv.yml` at the repo root:
+
+- Ensures `shirlei_report_all_data.csv` exists and is non‑empty
+- Confirms required header columns: `date_received`, `RequestType`
+- Requires at least two lines (header + data)
+
 ## Quick local preview (optional)
 
 Use a local web server to avoid `file://` fetch restrictions:
 
 - Python 3
+
   ```bash
   python -m http.server 8080
   ```
-  Open http://localhost:8080
+
+  Open [http://localhost:8080](http://localhost:8080)
 
 - Node (serve)
+
   ```bash
   npx serve .
   ```
@@ -81,6 +100,7 @@ Use a local web server to avoid `file://` fetch restrictions:
   - Page fees = pages × $0.10
   - Record Retrieval tiers and extra page calc preserved
 - The month selector only sets input values; totals update via existing JS functions.
+- If CSV/ZIP files become large or change frequently, consider enabling Git LFS for `*.csv` / `*.zip` to reduce repo bloat.
 
 ## License
 
