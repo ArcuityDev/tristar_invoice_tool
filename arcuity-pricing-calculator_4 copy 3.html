@@ -727,8 +727,11 @@
             a.click();
         }
 
-        // Initialize calculations on page load
-        calculateAll();
+        // Initialize calculations on page load and attempt to load CSV
+        (function init(){
+            calculateAll();
+            tryLoadCSV();
+        })();
     </script>
 </body>
 </html>
