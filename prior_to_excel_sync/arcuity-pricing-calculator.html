@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ArcuityVizion Usage Calculator</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 30px;
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+            margin-bottom: 30px;
+        }
+        h2 {
+            color: #34495e;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: linear-gradient(90deg, #f3f4f6 0%, transparent 100%);
+            border-left: 4px solid #667eea;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+        }
+        td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        tr:hover {
+            background: #f8f9fa;
+        }
+        input[type="number"] {
+            width: 100%;
+            padding: 8px;
+            border: 2px solid #e0e0e0;
+            border-radius: 4px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        .calculated {
+            background: #f0f4f8;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        .overage {
+            background: #fff3cd;
+            color: #856404;
+            font-weight: 600;
+        }
+        .total-row {
+            background: linear-gradient(90deg, #e8f5e9 0%, #f1f8e9 100%);
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+        .grand-total {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+        .notes {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 4px;
+        }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 10px 5px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 ArcuityVizion Usage Calculator</h1>
+        
+        <h2>Complex Report Generation Services</h2>
+        <table>
+            <tr>
+                <th>Service</th>
+                <th>Monthly Usage</th>
+                <th>Included Qty</th>
+                <th>Subscription Price</th>
+                <th>Overage</th>
+                <th>Overage Cost</th>
+                <th>Total Cost</th>
+            </tr>
+            <tr>
+                <td>IMR Report Generation</td>
+                <td><input type="number" id="imr-usage" min="0" value="180" onchange="calculateAll()"></td>
+                <td>400</td>
+                <td class="calculated">$5,000.00</td>
+                <td class="overage" id="imr-overage">0</td>
+                <td class="overage" id="imr-overage-cost">$0.00</td>
+                <td class="calculated" id="imr-total">$5,000.00</td>
+            </tr>
+            <tr>
+                <td>QME Report Prep</td>
+                <td><input type="number" id="qme-usage" min="0" value="100" onchange="calculateAll()"></td>
+                <td>200</td>
+                <td class="calculated">$5,000.00</td>
+                <td class="overage" id="qme-overage">0</td>
+                <td class="overage" id="qme-overage-cost">$0.00</td>
+                <td class="calculated" id="qme-total">$5,000.00</td>
+            </tr>
+            <tr>
+                <td>Each Report (Base Fee: $25)</td>
+                <td><input type="number" id="each-usage" min="0" value="25" onchange="calculateAll()"></td>
+                <td>100</td>
+                <td class="calculated">$2,500.00</td>
+                <td class="overage" id="each-overage">0</td>
+                <td class="overage" id="each-overage-cost">$0.00</td>
+                <td class="calculated" id="each-total">$2,500.00</td>
+            </tr>
+            <tr>
+                <td>SDT Response</td>
+                <td><input type="number" id="sdt-usage" min="0" value="100" onchange="calculateAll()"></td>
+                <td>400</td>
+                <td class="calculated">$5,000.00</td>
+                <td class="overage" id="sdt-overage">0</td>
+                <td class="overage" id="sdt-overage-cost">$0.00</td>
+                <td class="calculated" id="sdt-total">$5,000.00</td>
+            </tr>
+            <tr>
+                <td>File and Serve</td>
+                <td><input type="number" id="file-usage" min="0" value="600" onchange="calculateAll()"></td>
+                <td>800</td>
+                <td class="calculated">$5,000.00</td>
+                <td class="overage" id="file-overage">0</td>
+                <td class="overage" id="file-overage-cost">$0.00</td>
+                <td class="calculated" id="file-total">$5,000.00</td>
+            </tr>
+            <tr class="total-row">
+                <td colspan="6">Report Generation Subtotal</td>
+                <td class="calculated" id="report-subtotal">$22,500.00</td>
+            </tr>
+        </table>
+
+        <h2>Record Retrieval Services</h2>
+        <table>
+            <tr>
+                <th>Service</th>
+                <th>Monthly Usage</th>
+                <th>Pricing Tier</th>
+                <th>Rate</th>
+                <th>Base Cost</th>
+                <th>Additional Charges</th>
+                <th>Total Cost</th>
+            </tr>
+            <tr>
+                <td>Record Retrieval Orders</td>
+                <td><input type="number" id="retrieval-usage" min="0" value="300" onchange="calculateAll()"></td>
+                <td id="retrieval-tier">1-299: $112.50/order</td>
+                <td id="retrieval-rate">$112.50</td>
+                <td class="calculated" id="retrieval-base">$33,750.00</td>
+                <td>-</td>
+                <td class="calculated" id="retrieval-total">$33,750.00</td>
+            </tr>
+            <tr>
+                <td>Pages Over 500 (per document)</td>
+                <td><input type="number" id="extra-pages" min="0" value="0" onchange="calculateAll()" placeholder="Total extra pages"></td>
+                <td>Over 500 pages</td>
+                <td>$0.05/page</td>
+                <td>-</td>
+                <td class="calculated" id="extra-pages-cost">$0.00</td>
+                <td class="calculated" id="extra-pages-total">$0.00</td>
+            </tr>
+            <tr class="total-row">
+                <td colspan="6">Record Retrieval Subtotal</td>
+                <td class="calculated" id="retrieval-subtotal">$33,750.00</td>
+            </tr>
+        </table>
+
+        <h2>Monthly Summary</h2>
+        <table>
+            <tr>
+                <th>Category</th>
+                <th>Cost</th>
+            </tr>
+            <tr>
+                <td>Report Generation Services</td>
+                <td class="calculated" id="summary-reports">$22,500.00</td>
+            </tr>
+            <tr>
+                <td>Record Retrieval Services</td>
+                <td class="calculated" id="summary-retrieval">$33,750.00</td>
+            </tr>
+            <tr class="grand-total">
+                <td>TOTAL MONTHLY COST</td>
+                <td id="grand-total">$56,250.00</td>
+            </tr>
+        </table>
+
+        <div class="notes">
+            <h3>📝 Notes:</h3>
+            <ul>
+                <li>Report Generation: IMR, QME, SDT, F&S are charged at $0.10 per page for overage</li>
+                <li>Each Report has a $25.00 base fee</li>
+                <li>Record Retrieval: 1-299 orders = $112.50/order, 300-600 within subscription, 601-1000 = $105/order, 1000+ = negotiated</li>
+                <li>Additional charges for witness, ROI, postage, or personal service fees not included</li>
+                <li>Documents over 500 pages charged at $0.05 per page</li>
+            </ul>
+        </div>
+
+        <div style="text-align: center; margin-top: 30px;">
+            <button onclick="resetToDefaults()">Reset to Current Values</button>
+            <button onclick="exportData()">Export to CSV</button>
+        </div>
+    </div>
+
+    <script>
+        function calculateAll() {
+            // Report Generation Calculations
+            calculateReportService('imr', 400, 5000, 0.10);
+            calculateReportService('qme', 200, 5000, 0.10);
+            calculateEachReport();
+            calculateReportService('sdt', 400, 5000, 0.10);
+            calculateReportService('file', 800, 5000, 0.10);
+            
+            // Record Retrieval Calculations
+            calculateRecordRetrieval();
+            
+            // Calculate Subtotals
+            calculateSubtotals();
+        }
+
+        function calculateReportService(service, included, basePrice, overageRate) {
+            const usage = parseInt(document.getElementById(`${service}-usage`).value) || 0;
+            const overage = Math.max(0, usage - included);
+            const overageCost = overage * overageRate * 10; // Assuming per page rate, 10 pages average
+            const total = basePrice + overageCost;
+            
+            document.getElementById(`${service}-overage`).textContent = overage;
+            document.getElementById(`${service}-overage-cost`).textContent = `$${overageCost.toFixed(2)}`;
+            document.getElementById(`${service}-total`).textContent = `$${total.toFixed(2)}`;
+        }
+
+        function calculateEachReport() {
+            const usage = parseInt(document.getElementById('each-usage').value) || 0;
+            const included = 100;
+            const basePrice = 2500;
+            const overage = Math.max(0, usage - included);
+            const overageCost = overage * 25; // $25 per report overage
+            const total = basePrice + overageCost;
+            
+            document.getElementById('each-overage').textContent = overage;
+            document.getElementById('each-overage-cost').textContent = `$${overageCost.toFixed(2)}`;
+            document.getElementById('each-total').textContent = `$${total.toFixed(2)}`;
+        }
+
+        function calculateRecordRetrieval() {
+            const usage = parseInt(document.getElementById('retrieval-usage').value) || 0;
+            let rate, tier, baseCost;
+            
+            if (usage <= 299) {
+                rate = 112.50;
+                tier = "1-299: $112.50/order";
+                baseCost = usage * rate;
+            } else if (usage <= 600) {
+                rate = 112.50;
+                tier = "300-600: Subscription";
+                baseCost = 33750; // Fixed subscription cost
+            } else if (usage <= 1000) {
+                rate = 105.00;
+                tier = "601-1000: $105/order";
+                baseCost = 33750 + ((usage - 600) * rate);
+            } else {
+                rate = 105.00; // Default, should be negotiated
+                tier = "1000+: Negotiated";
+                baseCost = 33750 + ((usage - 600) * rate);
+            }
+            
+            const extraPages = parseInt(document.getElementById('extra-pages').value) || 0;
+            const extraPagesCost = extraPages * 0.05;
+            const total = baseCost + extraPagesCost;
+            
+            document.getElementById('retrieval-tier').textContent = tier;
+            document.getElementById('retrieval-rate').textContent = `$${rate.toFixed(2)}`;
+            document.getElementById('retrieval-base').textContent = `$${baseCost.toFixed(2)}`;
+            document.getElementById('extra-pages-cost').textContent = `$${extraPagesCost.toFixed(2)}`;
+            document.getElementById('extra-pages-total').textContent = `$${extraPagesCost.toFixed(2)}`;
+            document.getElementById('retrieval-total').textContent = `$${total.toFixed(2)}`;
+        }
+
+        function calculateSubtotals() {
+            // Report Generation Subtotal
+            const reportServices = ['imr', 'qme', 'each', 'sdt', 'file'];
+            let reportSubtotal = 0;
+            reportServices.forEach(service => {
+                const total = parseFloat(document.getElementById(`${service}-total`).textContent.replace('$', '').replace(',', ''));
+                reportSubtotal += total;
+            });
+            
+            // Record Retrieval Subtotal
+            const retrievalTotal = parseFloat(document.getElementById('retrieval-total').textContent.replace('$', '').replace(',', ''));
+            const extraPagesTotal = parseFloat(document.getElementById('extra-pages-total').textContent.replace('$', '').replace(',', ''));
+            const retrievalSubtotal = retrievalTotal + extraPagesTotal;
+            
+            // Update displays
+            document.getElementById('report-subtotal').textContent = `$${reportSubtotal.toFixed(2)}`;
+            document.getElementById('retrieval-subtotal').textContent = `$${retrievalSubtotal.toFixed(2)}`;
+            document.getElementById('summary-reports').textContent = `$${reportSubtotal.toFixed(2)}`;
+            document.getElementById('summary-retrieval').textContent = `$${retrievalSubtotal.toFixed(2)}`;
+            document.getElementById('grand-total').textContent = `$${(reportSubtotal + retrievalSubtotal).toFixed(2)}`;
+        }
+
+        function resetToDefaults() {
+            document.getElementById('imr-usage').value = 180;
+            document.getElementById('qme-usage').value = 100;
+            document.getElementById('each-usage').value = 25;
+            document.getElementById('sdt-usage').value = 100;
+            document.getElementById('file-usage').value = 600;
+            document.getElementById('retrieval-usage').value = 300;
+            document.getElementById('extra-pages').value = 0;
+            calculateAll();
+        }
+
+        function exportData() {
+            let csv = 'Service,Usage,Included,Subscription,Overage,Overage Cost,Total\n';
+            
+            // Add report services
+            const services = [
+                { name: 'IMR Report Generation', id: 'imr', included: 400 },
+                { name: 'QME Report Prep', id: 'qme', included: 200 },
+                { name: 'Each Report', id: 'each', included: 100 },
+                { name: 'SDT Response', id: 'sdt', included: 400 },
+                { name: 'File and Serve', id: 'file', included: 800 }
+            ];
+            
+            services.forEach(service => {
+                const usage = document.getElementById(`${service.id}-usage`).value;
+                const overage = document.getElementById(`${service.id}-overage`).textContent;
+                const overageCost = document.getElementById(`${service.id}-overage-cost`).textContent;
+                const total = document.getElementById(`${service.id}-total`).textContent;
+                csv += `${service.name},${usage},${service.included},,${overage},${overageCost},${total}\n`;
+            });
+            
+            // Add retrieval
+            const retrievalUsage = document.getElementById('retrieval-usage').value;
+            const retrievalTotal = document.getElementById('retrieval-total').textContent;
+            csv += `Record Retrieval,${retrievalUsage},600,$33750.00,,,${retrievalTotal}\n`;
+            
+            // Create download link
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'arcuity_usage_report.csv';
+            a.click();
+        }
+
+        // Initialize calculations on page load
+        calculateAll();
+    </script>
+</body>
+</html>

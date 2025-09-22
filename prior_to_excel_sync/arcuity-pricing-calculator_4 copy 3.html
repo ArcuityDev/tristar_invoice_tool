@@ -25,39 +25,6 @@
             padding-bottom: 10px;
             margin-bottom: 30px;
         }
-        /* Title with logo */
-        .title-with-logo {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        .title-with-logo img.logo {
-            height: 288px; /* adjust as needed */
-            width: auto;
-            display: inline-block;
-        }
-        /* Month filter controls */
-        .controls-row {
-            display: flex;
-            justify-content: flex-end;
-            align-items: center;
-            gap: 10px;
-            margin: 10px 0 20px 0;
-        }
-        .controls-row label {
-            font-size: 14px;
-            color: #34495e;
-        }
-        .controls-row select, .controls-row input[type="file"] {
-            padding: 6px 8px;
-            border: 2px solid #e0e0e0;
-            border-radius: 6px;
-            font-size: 14px;
-        }
-        .controls-row .status {
-            font-size: 12px;
-            color: #666;
-        }
         h2 {
             color: #34495e;
             margin-top: 30px;
@@ -146,18 +113,7 @@
 </head>
 <body>
     <div class="container">
-        <h1 class="title-with-logo">
-            <img src="logo.png" alt="ArcuityVizion Logo" class="logo">
-            <span>ArcuityVizion Usage Calculator</span>
-        </h1>
-        <div class="controls-row">
-            <label for="monthSelect">Month:</label>
-            <select id="monthSelect" disabled>
-                <option>Loading...</option>
-            </select>
-            <span class="status" id="csvStatus"></span>
-            <input type="file" id="csvFileInput" accept=".csv" style="display:none">
-        </div>
+        <h1>📊 ArcuityVizion Usage Calculator</h1>
         
         <h2>Complex Report Generation Services</h2>
         <table>
@@ -357,183 +313,6 @@
     </div>
 
     <script>
-        // --- Month selector powered by CSV ---
-        const MONTH_NAMES = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-        const monthSelect = document.getElementById('monthSelect');
-        const csvStatus = document.getElementById('csvStatus');
-        const csvFileInput = document.getElementById('csvFileInput');
-        let csvData = null; // { header:[], rows:[] }
-        let monthAgg = {};  // { 'YYYY-MM': { imr:{reports,pages}, qme:{...}, sdt:{...}, file:{...}, nfp:{...}, ond:{...}, retrieval:{orders,pages} } }
-
-        function parseCSV(text) {
-            const rows = [];
-            let i = 0, field = '', row = [], inQuotes = false;
-            while (i < text.length) {
-                const c = text[i];
-                if (inQuotes) {
-                    if (c === '"') {
-                        if (text[i+1] === '"') { field += '"'; i += 2; continue; }
-                        inQuotes = false; i++; continue;
-                    }
-                    field += c; i++; continue;
-                } else {
-                    if (c === '"') { inQuotes = true; i++; continue; }
-                    if (c === ',') { row.push(field); field=''; i++; continue; }
-                    if (c === '\n') { row.push(field); rows.push(row); row=[]; field=''; i++; continue; }
-                    if (c === '\r') { i++; continue; }
-                    field += c; i++; continue;
-                }
-            }
-            if (field.length>0 || row.length>0) { row.push(field); rows.push(row); }
-            return rows;
-        }
-
-        function yyyymm(dateStr) {
-            // Handles m/d/yyyy or mm/dd/yyyy
-            if (!dateStr) return null;
-            const parts = dateStr.split('/');
-            if (parts.length !== 3) return null;
-            const m = String(parseInt(parts[0],10)).padStart(2,'0');
-            const y = parts[2];
-            return `${y}-${m}`;
-        }
-
-        function monthLabel(key) {
-            const [y,m] = key.split('-');
-            return `${MONTH_NAMES[parseInt(m,10)-1]} ${y}`;
-        }
-
-        function ensureAgg(bucket) {
-            return bucket || { imr:{reports:0,pages:0}, qme:{reports:0,pages:0}, sdt:{reports:0,pages:0}, file:{reports:0,pages:0}, nfp:{reports:0,pages:0}, ond:{reports:0,pages:0}, retrieval:{orders:0,pages:0} };
-        }
-
-        function mapRequestType(rt) {
-            // Map RequestType from CSV to service IDs in the UI (case-insensitive, robust)
-            if (!rt) return null;
-            const s = String(rt).toLowerCase();
-            if (s === 'arcuity imr') return 'imr';
-            if (s === 'arcuity sdt response') return 'sdt';
-            if (s === 'arcuity file and serve') return 'file';
-            if (s === 'arcuity file prep' || s === 'arcuity file prep' || s === 'arcuity file  prep' || s === 'arcuity file  preparation' || s === 'arcuity file preparation' || s === 'arcuity file  prep' || s === 'arcuity file  pre') return 'nfp';
-            if (s === 'arcuity file prep' || s === 'arcuity file  prep' || s.includes('file prep')) return 'nfp';
-            if (s === 'arcuity on-demand' || s === 'arcuity on demand') return 'ond';
-            // QME variants
-            if (s === 'arcuity qme' || s === 'arcuity qme report prep' || s.includes('qme')) return 'qme';
-            return null;
-        }
-
-        function pickPages(pre, post) {
-            // Prefer PostDupe, fallback to Predupe, else 0
-            const toInt = v => { const n = parseInt((v||'').toString().replace(/[^0-9-]/g,''),10); return isNaN(n)?0:n; };
-            const postN = toInt(post);
-            const preN = toInt(pre);
-            return postN || preN || 0;
-        }
-
-        function buildAggregates() {
-            if (!csvData) return;
-            const header = csvData.header;
-            const rows = csvData.rows;
-            const idxDate = header.indexOf('date_received');
-            const idxRT = header.indexOf('RequestType');
-            const idxPre = header.indexOf('PredupePageCount');
-            const idxPost = header.indexOf('PostDupePageCount');
-            if (idxDate === -1 || idxRT === -1) return;
-            monthAgg = {};
-            for (const r of rows) {
-                const key = yyyymm(r[idxDate]);
-                if (!key) continue;
-                const bucket = monthAgg[key] = ensureAgg(monthAgg[key]);
-                const svc = mapRequestType(r[idxRT]);
-                const pages = pickPages(r[idxPre], r[idxPost]);
-                if (svc) {
-                    bucket[svc].reports += 1;
-                    bucket[svc].pages += pages;
-                }
-                // Record Retrieval Orders aggregation (by orders count)
-                if (r[idxRT] && r[idxRT].includes('Record Retrieval')) {
-                    bucket.retrieval.orders += 1;
-                    bucket.retrieval.pages += pages;
-                }
-            }
-        }
-
-        function populateMonthDropdown() {
-            const keys = Object.keys(monthAgg).sort();
-            monthSelect.innerHTML = '';
-            if (keys.length === 0) {
-                monthSelect.disabled = true;
-                monthSelect.innerHTML = '<option>No months found</option>';
-                return;
-            }
-            for (const k of keys) {
-                const opt = document.createElement('option');
-                opt.value = k;
-                opt.textContent = monthLabel(k);
-                monthSelect.appendChild(opt);
-            }
-            monthSelect.disabled = false;
-        }
-
-        function applyMonth(key) {
-            const bucket = monthAgg[key];
-            if (!bucket) return;
-            const setNum = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
-            setNum('imr-usage', bucket.imr.reports);
-            setNum('imr-pages', bucket.imr.pages);
-            setNum('qme-usage', bucket.qme.reports);
-            setNum('qme-pages', bucket.qme.pages);
-            setNum('sdt-usage', bucket.sdt.reports);
-            setNum('sdt-pages', bucket.sdt.pages);
-            setNum('file-usage', bucket.file.reports);
-            setNum('file-pages', bucket.file.pages);
-            setNum('nfp-usage', bucket.nfp.reports);
-            setNum('nfp-pages', bucket.nfp.pages);
-            setNum('ond-usage', bucket.ond.reports);
-            setNum('ond-pages', bucket.ond.pages);
-            setNum('retrieval-usage', bucket.retrieval.orders);
-            setNum('retrieval-pages', bucket.retrieval.pages);
-            calculateAll();
-        }
-
-        async function tryLoadCSV() {
-            try {
-                const res = await fetch('shirlei_report_all_data.csv');
-                if (!res.ok) throw new Error('HTTP '+res.status);
-                const text = await res.text();
-                const parsed = parseCSV(text);
-                if (!parsed || parsed.length < 2) throw new Error('No rows');
-                csvData = { header: parsed[0], rows: parsed.slice(1) };
-                csvStatus.textContent = 'Loaded data from CSV';
-                buildAggregates();
-                populateMonthDropdown();
-                const keys = Object.keys(monthAgg).sort();
-                if (keys.length) applyMonth(keys[keys.length-1]); // default to latest
-            } catch (e) {
-                csvStatus.textContent = 'Could not auto-load CSV. Please choose the file.';
-                csvFileInput.style.display = 'inline-block';
-                monthSelect.disabled = true;
-            }
-        }
-
-        monthSelect.addEventListener('change', () => {
-            const key = monthSelect.value;
-            applyMonth(key);
-        });
-
-        csvFileInput.addEventListener('change', async (ev) => {
-            const file = ev.target.files && ev.target.files[0];
-            if (!file) return;
-            const text = await file.text();
-            const parsed = parseCSV(text);
-            if (!parsed || parsed.length < 2) { csvStatus.textContent='Invalid CSV'; return; }
-            csvData = { header: parsed[0], rows: parsed.slice(1) };
-            csvStatus.textContent = 'CSV loaded.';
-            buildAggregates();
-            populateMonthDropdown();
-            const keys = Object.keys(monthAgg).sort();
-            if (keys.length) applyMonth(keys[keys.length-1]);
-        });
         function calculateAll() {
             // Report Generation Calculations
             calculateReportServiceWithPages('imr', 400, 5000);
@@ -727,11 +506,8 @@
             a.click();
         }
 
-        // Initialize calculations on page load and attempt to load CSV
-        (function init(){
-            calculateAll();
-            tryLoadCSV();
-        })();
+        // Initialize calculations on page load
+        calculateAll();
     </script>
 </body>
 </html>
